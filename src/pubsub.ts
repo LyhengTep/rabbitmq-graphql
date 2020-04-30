@@ -2,17 +2,18 @@ import { PubSubEngine } from "graphql-subscriptions";
 import * as amqp from "amqplib";
 import Debug from "debug";
 
-import { PubSubAMQPOptions } from "./interfaces";
+import { PubSubAMQPOptions, PubSubConnectionConfig } from "./interfaces";
 import { AMQPPublisher } from "./amqp/publisher";
 import { AMQPSubscriber } from "./amqp/subscriber";
 import { PubSubAsyncIterator } from "./pubsub-async-iterator";
+import { buildConnectionString } from "helper";
 
 const logger = Debug("AMQPPubSub");
 
 export class AMQPPubSub implements PubSubEngine {
   private connection: amqp.Connection;
   private exchange: string;
-
+  private queue_name: string;
   private publisher: AMQPPublisher;
   private subscriber: AMQPSubscriber;
 
@@ -23,23 +24,27 @@ export class AMQPPubSub implements PubSubEngine {
   private unsubscribeMap: { [trigger: string]: () => PromiseLike<any> };
   private currentSubscriptionId: number;
 
-  constructor(options: PubSubAMQPOptions) {
+  constructor(queue_name: string = "graphql_queue") {
     // Setup Variables
-    this.connection = options.connection;
-    this.exchange = options.exchange || "graphql_subscriptions";
 
+    this.queue_name = queue_name;
     this.subscriptionMap = {};
     this.subsRefsMap = {};
     this.unsubscribeMap = {};
     this.currentSubscriptionId = 0;
-
-    // Initialize AMQP Helper
-    this.publisher = new AMQPPublisher(this.connection, logger);
-    this.subscriber = new AMQPSubscriber(this.connection, logger);
-
     logger("Finished initializing");
   }
 
+  public async connect(config: PubSubConnectionConfig) {
+    const url = buildConnectionString(config);
+    return amqp.connect(url).then((conn) => {
+      this.connection = conn;
+
+      // Initialize AMQP Helper
+      this.publisher = new AMQPPublisher(this.connection, logger);
+      this.subscriber = new AMQPSubscriber(this.connection, logger);
+    });
+  }
   public async publish(routingKey: string, payload: any): Promise<void> {
     logger(
       'Publishing message to exchange "%s" for key "%s" (%j)',
@@ -67,7 +72,7 @@ export class AMQPPubSub implements PubSubEngine {
       return Promise.resolve(id);
     } else {
       return this.subscriber
-        .subscribe(this.exchange, routingKey, this.onMessage.bind(this))
+        .subscribe(this.queue_name, routingKey, this.onMessage.bind(this))
         .then((disposer) => {
           this.subsRefsMap[routingKey] = [
             ...(this.subsRefsMap[routingKey] || []),

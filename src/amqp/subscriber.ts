@@ -12,7 +12,7 @@ export class AMQPSubscriber {
   ) {}
 
   public async subscribe(
-    exchange: string,
+    queue_name: string,
     routingKey: string,
     action: (routingKey: string, message: any) => void
   ): Promise<() => PromiseLike<any>> {
@@ -25,22 +25,7 @@ export class AMQPSubscriber {
     return promise.then(async (ch) => {
       this.channel = ch;
       return ch
-        .assertExchange(exchange, "topic", {
-          durable: false,
-          autoDelete: false,
-        })
-        .then(() => {
-          return ch.assertQueue("tasks", {
-            exclusive: true,
-            durable: false,
-            autoDelete: true,
-          });
-        })
-        .then(async (queue) => {
-          return ch.bindQueue(queue.queue, exchange, routingKey).then(() => {
-            return queue;
-          });
-        })
+        .assertQueue(queue_name || "graphql_queue")
         .then(async (queue) => {
           return ch
             .consume(
