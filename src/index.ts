@@ -1,1 +1,1 @@
-console.log("Welcome to typescript boilerplate");
+export { AMQPPubSub } from "./pubsub";

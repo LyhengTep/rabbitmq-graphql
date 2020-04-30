@@ -12,6 +12,7 @@
     "incremental": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
     "paths": {}
   },
   "exclude": ["**/node_modules/*", "dist"]
