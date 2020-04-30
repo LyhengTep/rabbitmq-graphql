@@ -6,7 +6,7 @@ import { PubSubAMQPOptions, PubSubConnectionConfig } from "./interfaces";
 import { AMQPPublisher } from "./amqp/publisher";
 import { AMQPSubscriber } from "./amqp/subscriber";
 import { PubSubAsyncIterator } from "./pubsub-async-iterator";
-import { buildConnectionString } from "helper";
+import { buildConnectionString } from "./helper";
 
 const logger = Debug("AMQPPubSub");
 
@@ -37,13 +37,18 @@ export class AMQPPubSub implements PubSubEngine {
 
   public async connect(config: PubSubConnectionConfig) {
     const url = buildConnectionString(config);
-    return amqp.connect(url).then((conn) => {
-      this.connection = conn;
+    return amqp
+      .connect(url)
+      .then((conn) => {
+        this.connection = conn;
 
-      // Initialize AMQP Helper
-      this.publisher = new AMQPPublisher(this.connection, logger);
-      this.subscriber = new AMQPSubscriber(this.connection, logger);
-    });
+        // Initialize AMQP Helper
+        this.publisher = new AMQPPublisher(this.connection, logger);
+        this.subscriber = new AMQPSubscriber(this.connection, logger);
+      })
+      .catch((e) => {
+        console.log("error", e);
+      });
   }
   public async publish(routingKey: string, payload: any): Promise<void> {
     logger(

@@ -1,6 +1,6 @@
 {
   "name": "rabbitmq-graphql",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "description": "This project is created in term of making graphql subscription with rabbitmq possible.",
   "homepage": "https://github.com/LyhengTep/rabbitmq-graphql",
   "main": "dist/index.js",

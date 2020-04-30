@@ -1,5 +1,5 @@
 import { PubSubEngine } from "graphql-subscriptions";
-import { PubSubAMQPOptions } from "./interfaces";
+import { PubSubConnectionConfig } from "./interfaces";
 export declare class AMQPPubSub implements PubSubEngine {
     private connection;
     private exchange;
@@ -10,7 +10,8 @@ export declare class AMQPPubSub implements PubSubEngine {
     private subsRefsMap;
     private unsubscribeMap;
     private currentSubscriptionId;
-    constructor(options: PubSubAMQPOptions, queue_name?: string);
+    constructor(queue_name?: string);
+    connect(config: PubSubConnectionConfig): Promise<void>;
     publish(routingKey: string, payload: any): Promise<void>;
     subscribe(routingKey: string, onMessage: (message: any) => void): Promise<number>;
     unsubscribe(subId: number): Promise<void>;
